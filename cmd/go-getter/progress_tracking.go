@@ -31,7 +31,10 @@ type ProgressBar struct {
 
 func ProgressBarConfig(bar *pb.ProgressBar, prefix string) {
 	bar.SetUnits(pb.U_BYTES)
-	bar.Prefix(prefix)
+	bar.ShowSpeed = true
+	bar.ShowElapsedTime = true
+	bar.ShowFinalTime = true
+	bar.ShowTimeLeft = true
 }
 
 // TrackProgress instantiates a new progress bar that will
@@ -46,7 +49,10 @@ func (cpb *ProgressBar) TrackProgress(src string, currentSize, totalSize int64, 
 	ProgressBarConfig(newPb, filepath.Base(src))
 	if cpb.pool == nil {
 		cpb.pool = pb.NewPool()
-		cpb.pool.Start()
+		err := cpb.pool.Start()
+		if err != nil {
+			panic(err)
+		}
 	}
 	cpb.pool.Add(newPb)
 	reader := newPb.NewProxyReader(stream)
@@ -61,7 +67,10 @@ func (cpb *ProgressBar) TrackProgress(src string, currentSize, totalSize int64, 
 			newPb.Finish()
 			cpb.pbs--
 			if cpb.pbs <= 0 {
-				cpb.pool.Stop()
+				err := cpb.pool.Stop()
+				if err != nil {
+					panic(err)
+				}
 				cpb.pool = nil
 			}
 			return nil
